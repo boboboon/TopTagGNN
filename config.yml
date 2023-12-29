@@ -1,0 +1,7 @@
+n_train_jets: 3000000
+n_test_jets: -1
+valid_fraction: 0.2
+max_constits: 80
+tagger_type: efn
+num_epochs: 20
+batch_size: 256
