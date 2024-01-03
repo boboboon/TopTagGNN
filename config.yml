@@ -5,3 +5,5 @@ max_constits: 80
 tagger_type: efn
 num_epochs: 20
 batch_size: 256
+data_path: /Users/lucascurtin/Desktop/CERN_DATA"
+figure_path: /Users/lucascurtin/Desktop/TopTagGNN/figures

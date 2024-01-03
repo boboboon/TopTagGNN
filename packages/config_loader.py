@@ -1,11 +1,20 @@
 import argparse
 import yaml
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 
+@dataclass
 class Config:
-    def __init__(self, config_dict):
-        self.__dict__.update(config_dict)
+    n_train_jets: int
+    n_test_jets: int
+    valid_fraction: float
+    max_constits: int
+    tagger_type: str
+    num_epochs: int
+    batch_size: int
+    data_path: Path
+    figure_path: Path
 
 def load_config(config_path):
     if not config_path.is_file():
@@ -15,7 +24,7 @@ def load_config(config_path):
     with open(config_path, 'r') as config_file:
         config_data = yaml.safe_load(config_file)
 
-    return Config(config_data)
+    return Config(**config_data)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Your Script Description")
