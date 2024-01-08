@@ -45,7 +45,9 @@ fixable = [
     "NPY001",  # Fix numpy types, which are removed in 1.24.
     "RUF100",  # Remove unused noqa comments.
     "I001",  # Organise our lovely imports
-    "RET504"  # Shouts at us for unneeded return statements
+    "RET504",  # Shouts at us for unneeded return statements
+    "D202", # Shoots whitespaces
+    "D205", # Functions just love blank lines
 ]
 
 ignore = [
@@ -55,3 +57,6 @@ ignore = [
 
 [tool.ruff.pydocstyle]
 convention="google"
+
+[tool.pyright]
+reportGeneralTypeIssues = false # The h5.py stuff doesn't agree with PyLance

@@ -1,5 +1,4 @@
 """Our config loader package."""
-import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path

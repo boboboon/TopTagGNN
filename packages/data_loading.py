@@ -4,24 +4,21 @@
 import numpy as np
 
 
-def constituent(data_dict, max_constits):
-    """constituent - This function applies a standard preprocessing to the
-    jet data contained in train_dict. It will operate on the raw constituent
-    level quantities and return 7 constituent level quantities which can be
-    used for tagger training.
+def constituent(data_dict: dict, max_constits: int) -> np.ndarray:
+    """Constituent - This function applies a standard preprocessing to the jet data.
 
-    Arguments:
-    data_dict (dict of np arrays) - The python dictionary containing all of
+    Args:
+        data_dict (dict): The python dictionary containing all of
     the constituent level quantities. Standard naming conventions will be
     assumed.
-    max_constits (int) - The maximum number of constituents to consider in
+        max_constits (int): The maximum number of constituents to consider in
     preprocessing. Cut jet constituents at this number.
 
+
     Returns:
-    (np array) - The seven constituent level quantities, stacked along the last
+        np.ndarray: The seven constituent level quantities, stacked along the last
     axis.
     """
-
     ############################## Load Data ###################################
 
     # Pull data from data dict
@@ -92,40 +89,32 @@ def constituent(data_dict, max_constits):
 
     # Stack along last axis
     features = [eta_flip, phi_rot, log_pt, log_energy, lognorm_pt, lognorm_energy, radius]
-    stacked_data = np.stack(features, axis=-1)
-
-    return stacked_data
+    return np.stack(features, axis=-1)
 
 
-def high_level(data_dict):
-    """high_level - This function "standardizes" each of the high level
-    quantities contained in data_dict (subtract off mean and divide by
-    standard deviation).
+def high_level(data_dict: dict) -> np.ndarray:
+    """High_level - This function "standardizes" each of the high level quantities.
 
-    Arguments:
-    data_dict (dict of np arrays) - The python dictionary containing all of
+    Args:
+        data_dict (dict): The python dictionary containing all of
     the high level quantities. No naming conventions assumed.
 
     Returns:
-    (array) - The high level quantities, stacked along the last dimension.
+        np.ndarray: The high level quantities, stacked along the last dimension.
     """
-
     # Empty list to accept pre-processed high level quantities
     features = []
 
-    # Loop through quantities in data dict
+    scale1_limit = 1e5
+    scale2_limit = 1e11
+    scale3_limit = 1e17
+
     for quant in data_dict.values():
-        # Some high level quantities have large orders of magnitude. Can divide
-        # off these large exponents before evaluating mean and standard
-        # deviation
-        if 1e5 < quant.max() <= 1e11:
-            # Quantity on scale TeV (sqrt{d12}, sqrt{d23}, ECF1, Qw)
+        if scale1_limit < quant.max() <= scale2_limit:
             quant /= 1e6
-        elif 1e11 < quant.max() <= 1e17:
-            # Quantity on scale TeV^2 (ECF2)
+        elif scale2_limit < quant.max() <= scale3_limit:
             quant /= 1e12
-        elif quant.max() > 1e17:
-            # Quantity on scale TeV^3 (ECF3)
+        elif quant.max() > scale3_limit:
             quant /= 1e18
 
         # Calculated mean and standard deviation
@@ -137,6 +126,4 @@ def high_level(data_dict):
         features.append(standard_quant)
 
     # Stack quantities and return
-    stacked_data = np.stack(features, axis=-1)
-
-    return stacked_data
+    return np.stack(features, axis=-1)
