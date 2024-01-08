@@ -1,12 +1,57 @@
-[tool.ruff] 
+[tool.ruff]
 line-length = 100
-ignore = ["D203"]
-show-source = true
+target-version = "py38"
 
-[tool.black] 
-line-length = 100 
-target-version = ['py3.8.2'] 
+select = [
+    "A",  # prevent using keywords that clobber python builtins
+    "B",  # bugbear: security warnings
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # pyflakes
+    "ISC",  # implicit string concatenation
+    "UP",  # alert you when better syntax is available in your python version
+    "RUF",  # the ruff developer's own rules
+    "D",  #documentation
+    "W",  #pycodestyle warnings
+    "C90",  #maccabe complexity
+    "ANN",  # flake8 type hinting
+    "BLE",  # disable blind extensions
+    "FBT",  # make boolean variables keyword only
+    "COM",  # standardise trailing comma conventions (source of black weirdness)
+    "C4",  #d iterable comprehension
+    "EM",  # improves error readability
+    "FA",  # modernise type annotations
+    "ICN",  # enforce import naming conventions
+    "G",  # set logging standards
+    "T20",  # disallow print statements
+    "PT",  #pytest style guidelines 
+    "Q",  # '->"
+    "RET",  # improve return statement structuring
+    "SIM",  # flake8 simplify, help address complexity 
+    "TID",  # improve import structuring 
+    "ARG",  # unused arguments
+    "PTH",  # use pathlib over os.path 
+    "ERA",  # discentivse commented out code
+    "PD",  # pandas guidelines 
+    "PLR",  # pylint refactoring guidelines
+    "TRY",  # incentivse proper error handling
+    "NPY",  # numpy modernisation rules
 
-[tool.ruff.format]
-docstring-code-format = true
-docstring-code-line-length = 20
+
+]
+
+fixable = [
+    "F401",  # Remove unused imports.
+    "NPY001",  # Fix numpy types, which are removed in 1.24.
+    "RUF100",  # Remove unused noqa comments.
+    "I001",  # Organise our lovely imports
+    "RET504"  # Shouts at us for unneeded return statements
+]
+
+ignore = [
+    "ANN101",  # ignore need to type hint "self" in method calls
+    "ANN102",  # ignore need to type hint "cls" in classmethod calls
+]
+
+[tool.ruff.pydocstyle]
+convention="google"
