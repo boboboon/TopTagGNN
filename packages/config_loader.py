@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
+from packages import data_loading, models
+
 
 @dataclass
 class Config:
@@ -47,3 +49,42 @@ def _arg_config() -> Config:
     parser.add_argument("--config_file", type=Path, help="path to config file", required=True)
     args = parser.parse_args()
     return load_config(args.config_file)
+
+
+def load_tagger_config(config: Config) -> dict:
+    """Loads tagger information.
+
+    Args:
+        config (cl.Config): Our config file
+
+    Raises:
+        ValueError: If it doesn't recognise your config type
+
+    Returns:
+        dict: Our tagger type config dictionary
+    """
+    # Define a dictionary to map tagger types to corresponding data vector names,
+    # preprocessing functions, and model building functions
+    tagger_config = {
+        "hldnn": {
+            "data_vector_names": "hl",
+            "pre_processing_function": data_loading.high_level,
+            "model_loading_function": models.hldnn_model_generator,
+        },
+        "efn": {
+            "data_vector_names": "constit",
+            "pre_processing_function": lambda data_dict: data_loading.constituent(
+                data_dict,
+                config.max_constits,
+            ),
+            "model_loading_function": models.efn_model_generator,
+        },
+    }
+
+    # Check if the specified tagger_type is supported``
+    if config.tagger_type not in tagger_config:
+        error_message = f"Unsupported tagger_type: {config.tagger_type}"
+        logger.error(error_message)
+
+    # Get configuration for the specified tagger_type
+    return tagger_config[config.tagger_type]

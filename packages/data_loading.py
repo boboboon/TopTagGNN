@@ -8,6 +8,36 @@ import tensorflow as tf
 import packages.config_loader as cl
 
 
+class DataContainer:
+    """A custom data container class to hold data, labels, and weights for training and testing.
+
+    Args:
+        data (np.array): The input data array with shape (num_samples, max_constits, num_features).
+        labels (np.array): The labels array with shape (num_samples, num_classes).
+        weights (np.array): The weights array with shape (num_samples,).
+
+    Attributes:
+        data (np.array): The input data array.
+        labels (np.array): The labels array.
+        weights (np.array): The weights array.
+
+    Example:
+        data_container = DataContainer(train_data, train_labels, train_weights)
+    """
+
+    def __init__(self, data: np.array, labels: np.array, weights: np.array) -> None:
+        """Initializes a data container for training and testing data.
+
+        Args:
+            data (np.array): The input data with shape (num_samples, max_constits, num_features).
+            labels (np.array): The labels with shape (num_samples, num_classes).
+            weights (np.array): The sample weights with shape (num_samples,).
+        """
+        self.data = data
+        self.labels = labels
+        self.weights = weights
+
+
 def constituent(data_dict: dict, max_constits: int) -> np.ndarray:
     """Constituent - This function applies a standard preprocessing to the jet data.
 
@@ -135,30 +165,30 @@ def high_level(data_dict: dict) -> np.ndarray:
 
 def prepare_efn_data(
     config: cl.Config,
-    train_data: np.array,
-    test_data: np.array,
-    train_labels: np.array,
-    test_labels: np.array,
-    train_weights: np.array,
-    test_weights: np.array,
+    train_data_container: DataContainer,
+    test_data_container: DataContainer,
 ) -> tuple:
     """Prepares the data for our efn model.
 
     Args:
-        train_data (np.array): As named.
-        test_data (np.array): As named.
-        train_labels (np.array): As named.
-        test_labels (np.array): As named.
-        train_weights (np.array): As named.
-        test_weights (np.array): As named.
+        config (cl.Config): Configuration object for the EFN model.
+        train_data_container (DataContainer): Data container for training data.
+        test_data_container (DataContainer): Data container for testing data.
 
     Returns:
-        (tuple): Our datasets required for training
+        tuple: Datasets required for training, validation, and testing.
     """
+    train_data = train_data_container.data
+    train_labels = train_data_container.labels
+    train_weights = train_data_container.weights
+
+    test_data = test_data_container.data
+    test_labels = test_data_container.labels
+    test_weights = test_data_container.weights
+
     # For EFN, take only eta, phi, and log(pT) quantities, and package into
     # a single dataset. We want each element of the data set to have shape:
     #   ((batch_size, max_constits, 1), (batch_size, max_constits, 2))  # noqa: ERA001
-    # We can do this using tensorflow Dataset's "zip" function.
     # This code assumes quantities are ordered (eta, phi, pT, ...)
     train_angular = train_data[:, :, 0:2]
     train_pt = train_data[:, :, 2]
@@ -188,14 +218,14 @@ def prepare_efn_data(
     # Build tensorflow data sets
     train_list = [train_pt, train_angular, train_labels, train_weights]
     train_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list]
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list],
     )
     train_data = tf.data.Dataset.zip(train_sets[:2])
     train_dataset = tf.data.Dataset.zip((train_data,) + train_sets[2:])
 
     valid_list = [valid_pt, valid_angular, valid_labels, valid_weights]
     valid_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list]
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list],
     )
     valid_data = tf.data.Dataset.zip(valid_sets[:2])
     valid_dataset = tf.data.Dataset.zip((valid_data,) + valid_sets[2:])
@@ -210,13 +240,27 @@ def prepare_efn_data(
 
 def prepare_hldnn_data(
     config: cl.Config,
-    train_data: np.array,
-    test_data: np.array,
-    train_labels: np.array,
-    test_labels: np.array,
-    train_weights: np.array,
-    test_weights: np.array,
+    train_data_container: DataContainer,
+    test_data_container: DataContainer,
 ) -> tuple:
+    """Prepares the data for the hldnn model.
+
+    Args:
+        config (cl.Config): Configuration object for the hldnn model.
+        train_data_container (DataContainer): Data container for training data.
+        test_data_container (DataContainer): Data container for testing data.
+
+    Returns:
+        tuple: Datasets required for training, validation, and testing.
+    """
+    train_data = train_data_container.data
+    train_labels = train_data_container.labels
+    train_weights = train_data_container.weights
+
+    test_data = test_data_container.data
+    test_labels = test_data_container.labels
+    test_weights = test_data_container.weights
+
     # Make train / valid split using sklearn train_test_split function
     (
         train_data,
@@ -231,6 +275,7 @@ def prepare_hldnn_data(
         train_weights,
         test_size=config.valid_fraction,
     )
+
     batch_size = config.batch_size
     train_dataset = tf.data.Dataset.from_tensor_slices(
         (train_data, train_labels, train_weights),
