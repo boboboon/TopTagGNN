@@ -1,5 +1,4 @@
 """Handles our model creation and prepping data to feed into them."""
-import energyflow as ef
 import numpy as np
 import tensorflow as tf
 from energyflow.archs import EFN
