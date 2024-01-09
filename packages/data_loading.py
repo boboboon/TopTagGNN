@@ -4,8 +4,10 @@
 import numpy as np
 import sklearn as skl
 import tensorflow as tf
+from loguru import logger
 
-import packages.config_loader as cl
+from packages import config_loader as cl
+from packages import models
 
 
 class DataContainer:
@@ -36,6 +38,45 @@ class DataContainer:
         self.data = data
         self.labels = labels
         self.weights = weights
+
+
+def load_tagger_config(config: cl.Config) -> dict:
+    """Loads tagger information.
+
+    Args:
+        config (cl.Config): Our config file
+
+    Raises:
+        ValueError: If it doesn't recognise your config type
+
+    Returns:
+        dict: Our tagger type config dictionary
+    """
+    # Define a dictionary to map tagger types to corresponding data vector names,
+    # preprocessing functions, and model building functions
+    tagger_config = {
+        "hldnn": {
+            "data_vector_names": "hl",
+            "pre_processing_function": high_level,
+            "model_loading_function": models.hldnn_model_generator,
+        },
+        "efn": {
+            "data_vector_names": "constit",
+            "pre_processing_function": lambda data_dict: constituent(
+                data_dict,
+                config.max_constits,
+            ),
+            "model_loading_function": models.efn_model_generator,
+        },
+    }
+
+    # Check if the specified tagger_type is supported``
+    if config.tagger_type not in tagger_config:
+        error_message = f"Unsupported tagger_type: {config.tagger_type}"
+        logger.error(error_message)
+
+    # Get configuration for the specified tagger_type
+    return tagger_config[config.tagger_type]
 
 
 def constituent(data_dict: dict, max_constits: int) -> np.ndarray:

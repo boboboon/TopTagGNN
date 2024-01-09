@@ -3,15 +3,14 @@ from pathlib import Path
 
 import h5py
 
-import packages.config_loader as cl
-from packages import data_loading, models
+from packages import config_loader, data_loading, models
 
 
-def prepare_data(config: cl.Config, train: h5py.File, test: h5py.File) -> tuple:
+def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File) -> tuple:
     """Prepares data and model based on the provided configuration.
 
     Args:
-        config (cl.Config): Configuration for the data preparation.
+        config (config_loader.Config): Configuration for the data preparation.
         train (h5py.File): Training data file (HDF5 format).
         test (h5py.File): Testing data file (HDF5 format).
 
@@ -25,7 +24,7 @@ def prepare_data(config: cl.Config, train: h5py.File, test: h5py.File) -> tuple:
     test_weights = test["weights"][: config.n_test_jets]
 
     # Load tagger configuration
-    tagger_config = cl.load_tagger_config(config)
+    tagger_config = config_loader.load_tagger_config(config)
 
     # Extract data vector names
     data_vector_names = train.attrs.get(tagger_config["data_vector_names"])
@@ -72,11 +71,11 @@ def prepare_data(config: cl.Config, train: h5py.File, test: h5py.File) -> tuple:
     return model, train_dataset, valid_dataset, test_dataset
 
 
-def main(config: cl.Config) -> None:
+def main(config: config_loader.Config) -> None:
     """Performs our jet tagging.
 
     Args:
-        config (cl.Config): Our config file.
+        config (config_loader.Config): Our config file.
     """
     data_path = Path("/Users/lucascurtin/Desktop/CERN_DATA")
     test_path = data_path / "test.h5"
@@ -84,13 +83,9 @@ def main(config: cl.Config) -> None:
     test = h5py.File(test_path, "r")
     train = h5py.File(test_path, "r")
 
-    (model, train_dataset, valid_dataset, test_dataset) = prepare_data(
-        config,
-        train,
-        test,
-    )
+    # (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config,train,test,#)
 
 
 if __name__ == "__main__":
-    config = cl._arg_config()
+    config = config_loader._arg_config()
     main(config)
