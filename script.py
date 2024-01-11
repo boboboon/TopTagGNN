@@ -23,12 +23,6 @@ def main(config: config_loader.Config) -> None:
         train_path=test_path,
         test_path=test_path,
     )
-    model.compile(
-        optimizer="adam",
-        loss="sparse_categorical_crossentropy",
-        metrics=["accuracy"],
-        weighted_metrics=["accuracy"],
-    )
 
     logger.info("Training Model")
 
