@@ -84,7 +84,7 @@ def main(config: config_loader.Config) -> None:
     test = h5py.File(test_path, "r")
     train = h5py.File(test_path, "r")
 
-    (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config, train, test)
+    # (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config, train, test)
 
     logger.info("Wahey!")
 
