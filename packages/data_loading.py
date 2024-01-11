@@ -356,14 +356,14 @@ def prepare_efn_data(
     # Build tensorflow data sets
     train_list = [train_pt, train_angular, train_labels, train_weights]
     train_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list]
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list],
     )
     train_data = tf.data.Dataset.zip(train_sets[:2])
     train_dataset = tf.data.Dataset.zip((train_data,) + train_sets[2:])
 
     valid_list = [valid_pt, valid_angular, valid_labels, valid_weights]
     valid_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list]
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list],
     )
     valid_data = tf.data.Dataset.zip(valid_sets[:2])
     valid_dataset = tf.data.Dataset.zip((valid_data,) + valid_sets[2:])

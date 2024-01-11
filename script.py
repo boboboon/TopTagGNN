@@ -1,7 +1,6 @@
 """What's the deal with tagging?"""
 from pathlib import Path
 
-import tensorflow as tf
 from loguru import logger
 
 from packages import config_loader, data_loading, plotter
