@@ -4,7 +4,7 @@ import tensorflow as tf
 from energyflow.archs import EFN
 
 
-def efn_model_generator() -> EFN():
+def efn_model_generator() -> EFN:
     """Creates our efn model.
 
     Returns:

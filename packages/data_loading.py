@@ -102,9 +102,8 @@ def constituent(data_dict: dict, max_constits: int) -> np.ndarray:
     phi = data_dict["fjet_clus_phi"][:, :max_constits]
     energy = data_dict["fjet_clus_E"][:, :max_constits]
 
-    # Find location of zero pt entries in each jet. This will be used as a
-    # mask to re-zero out entries after all preprocessing steps
-    mask = np.asarray(pt == 0).nonzero()
+    # Find location of zero pt entries in each jet
+    mask = pt == 0
 
     ########################## Angular Coordinates #############################
 
@@ -139,28 +138,30 @@ def constituent(data_dict: dict, max_constits: int) -> np.ndarray:
 
     ############################# pT and Energy ################################
 
-    # Take the logarithm, ignoring -infs which will be set to zero later
-    log_pt = np.log(pt)
-    log_energy = np.log(energy)
+    # Set zero elements to 1 before taking the log
+    log_pt = np.log(np.where(mask, 1, pt))
+    log_energy = np.log(np.where(mask, 1, energy))
 
     # Sum pt and energy in each jet
     sum_pt = np.sum(pt, axis=1)
     sum_energy = np.sum(energy, axis=1)
 
     # Normalize pt and energy and again take logarithm
-    lognorm_pt = np.log(pt / sum_pt[:, np.newaxis])
-    lognorm_energy = np.log(energy / sum_energy[:, np.newaxis])
+    lognorm_pt = np.log(
+        np.where(
+            mask,
+            1,
+            pt / sum_pt[:, np.newaxis],
+        ),  # Set zero elements to 1 before taking the log
+    )
+    lognorm_energy = np.log(np.where(mask, 1, energy / sum_energy[:, np.newaxis]))
 
     ########################### Finalize and Return ############################
 
     # Reset all of the original zero entries to zero
-    eta_flip[mask] = 0
-    phi_rot[mask] = 0
-    log_pt[mask] = 0
-    log_energy[mask] = 0
-    lognorm_pt[mask] = 0
-    lognorm_energy[mask] = 0
-    radius[mask] = 0
+    eta_flip = np.where(mask, 0, eta_flip)
+    phi_rot = np.where(mask, 0, phi_rot)
+    radius = np.where(mask, 0, radius)
 
     # Stack along last axis
     features = [eta_flip, phi_rot, log_pt, log_energy, lognorm_pt, lognorm_energy, radius]

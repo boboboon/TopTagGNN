@@ -25,7 +25,7 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
     test_weights = test["weights"][: config.n_test_jets]
 
     # Load tagger configuration
-    tagger_config = config_loader.load_tagger_config(config)
+    tagger_config = data_loading.load_tagger_config(config)
 
     # Extract data vector names
     data_vector_names = train.attrs.get(tagger_config["data_vector_names"])
@@ -84,7 +84,7 @@ def main(config: config_loader.Config) -> None:
     test = h5py.File(test_path, "r")
     train = h5py.File(test_path, "r")
 
-    # (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config, train, test)
+    (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config, train, test)
 
     logger.info("Wahey!")
 
