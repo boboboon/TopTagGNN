@@ -1,6 +1,9 @@
 """This code has been heavily adapted from Kevin Greif: https://gitlab.cern.ch/atlas/ATLAS-top-tagging-open-data/-/blob/master/preprocessing.py?ref_type=heads."""
 
 # Numerical imports
+from pathlib import Path
+
+import h5py
 import numpy as np
 import sklearn as skl
 import tensorflow as tf
@@ -38,6 +41,70 @@ class DataContainer:
         self.data = data
         self.labels = labels
         self.weights = weights
+
+
+def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tuple:
+    """Prepares data and model based on the provided configuration.
+
+    Args:
+        config (config_loader.Config): Configuration for the data preparation.
+        train_path (Path): Path to our training data file (HDF5 format).
+        test_path (Path): Path to our testing data file (HDF5 format).
+
+    Returns:
+        tuple: A tuple containing the model and datasets for training, validation, and testing.
+    """
+    test = h5py.File(test_path, "r")
+    train = h5py.File(train_path, "r")
+    logger.info("Separating train and test data into constituent parts")
+    # Extract labels and weights
+    train_labels = train["labels"][: config.n_train_jets]
+    train_weights = train["weights"][: config.n_train_jets]
+    test_labels = test["labels"][: config.n_test_jets]
+    test_weights = test["weights"][: config.n_test_jets]
+
+    # Load tagger configuration
+    tagger_config = load_tagger_config(config)
+
+    # Extract data vector names
+    data_vector_names = train.attrs.get(tagger_config["data_vector_names"])
+
+    if data_vector_names is None:
+        error_message = "data_vector_names is None. Cannot proceed with data preparation."
+        raise ValueError(error_message)
+
+    train_dict = {key: train[key][: config.n_train_jets, ...] for key in data_vector_names}
+    test_dict = {key: test[key][: config.n_test_jets, ...] for key in data_vector_names}
+
+    # Pre-process data using the specified function
+    logger.info("Preprocessing data")
+    train_data = tagger_config["pre_processing_function"](train_dict)
+    test_data = tagger_config["pre_processing_function"](test_dict)
+
+    # Nice containers for our data.
+    logger.info("Putting data in containers")
+    train_data_container = DataContainer(
+        data=train_data,
+        labels=train_labels,
+        weights=train_weights,
+    )
+    test_data_container = DataContainer(
+        data=test_data,
+        labels=test_labels,
+        weights=test_weights,
+    )
+
+    logger.info(f"Building {config.tagger_type} model")
+    model = tagger_config["model_loading_function"]()
+
+    logger.info("Preparing data For model")
+    train_dataset, test_dataset, valid_dataset = tagger_config["data_loading_function"](
+        config,
+        train_data_container,
+        test_data_container,
+    )
+
+    return model, train_dataset, valid_dataset, test_dataset
 
 
 def load_tagger_config(config: cl.Config) -> dict:
@@ -207,6 +274,29 @@ def high_level(data_dict: dict) -> np.ndarray:
     return np.stack(features, axis=-1)
 
 
+def create_tf_dataset(data_list: list, batch_size: int) -> tf.data.Dataset.BatchDataset:
+    """Create a TensorFlow dataset from a list of data and batch it.
+
+    This function takes a list of data and creates a TensorFlow dataset using
+    `tf.data.Dataset.from_tensor_slices`. It then batches the dataset into
+    smaller batches specified by the `batch_size` parameter.
+
+    Args:
+        data_list (list): A list or tuple of data to be converted into a TensorFlow dataset.
+        batch_size (int): The size of batches to create from the data.
+
+    Returns:
+        tf.data.Dataset: A TensorFlow dataset containing the data batched by the
+        specified `batch_size`.
+
+    Example:
+        data_list = [data1, data2, data3]
+        batch_size = 32
+        dataset = create_tf_dataset(data_list, batch_size)
+    """
+    return tf.data.Dataset.from_tensor_slices(data_list).batch(batch_size)
+
+
 def prepare_efn_data(
     config: cl.Config,
     train_data_container: DataContainer,
@@ -230,17 +320,19 @@ def prepare_efn_data(
     test_labels = test_data_container.labels
     test_weights = test_data_container.weights
 
-    # For EFN, take only eta, phi, and log(pT) quantities, and package into
-    # a single dataset. We want each element of the data set to have shape:
-    #   ((batch_size, max_constits, 1), (batch_size, max_constits, 2))  # noqa: ERA001
-    # This code assumes quantities are ordered (eta, phi, pT, ...)
-    train_angular = train_data[:, :, 0:2]
-    train_pt = train_data[:, :, 2]
+    # Extract relevant columns for angular and pt data
+    angular_indices = slice(0, 2)
+    pt_index = 2
 
-    test_angular = test_data[:, :, 0:2]
-    test_pt = test_data[:, :, 2]
+    train_angular = train_data[:, :, angular_indices]
+    train_pt = train_data[:, :, pt_index]
 
-    # Make train / valid split using sklearn train_test_split function
+    test_angular = test_data[:, :, angular_indices]
+    test_pt = test_data[:, :, pt_index]
+
+    # Split the training data into train and validation sets
+    from sklearn.model_selection import train_test_split
+
     (
         train_angular,
         valid_angular,
@@ -250,7 +342,7 @@ def prepare_efn_data(
         valid_labels,
         train_weights,
         valid_weights,
-    ) = skl.model_selection.train_test_split(
+    ) = train_test_split(
         train_angular,
         train_pt,
         train_labels,
@@ -259,27 +351,22 @@ def prepare_efn_data(
     )
 
     batch_size = config.batch_size
-    # Build tensorflow data sets
-    train_list = [train_pt, train_angular, train_labels, train_weights]
-    train_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list],
+    # Create TensorFlow datasets
+    train_datasets = [train_pt, train_angular, train_labels, train_weights]
+    valid_datasets = [valid_pt, valid_angular, valid_labels, valid_weights]
+    test_datasets = [test_pt, test_angular, test_labels, test_weights]
+
+    train_dataset = tf.data.Dataset.zip(
+        tuple(create_tf_dataset(data_list, batch_size) for data_list in train_datasets),
     )
-    train_data = tf.data.Dataset.zip(train_sets[:2])
-    train_dataset = tf.data.Dataset.zip((train_data,) + train_sets[2:])
-
-    valid_list = [valid_pt, valid_angular, valid_labels, valid_weights]
-    valid_sets = tuple(
-        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list],
+    valid_dataset = tf.data.Dataset.zip(
+        tuple(create_tf_dataset(data_list, batch_size) for data_list in valid_datasets),
     )
-    valid_data = tf.data.Dataset.zip(valid_sets[:2])
-    valid_dataset = tf.data.Dataset.zip((valid_data,) + valid_sets[2:])
+    test_dataset = tf.data.Dataset.zip(
+        tuple(create_tf_dataset(data_list, batch_size) for data_list in test_datasets),
+    )
 
-    test_list = [test_pt, test_angular, test_labels, test_weights]
-    test_sets = tuple([tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in test_list])
-    test_data = tf.data.Dataset.zip(test_sets[:2])
-    test_dataset = tf.data.Dataset.zip((test_data,) + test_sets[2:])
-
-    return (train_dataset, valid_dataset, test_dataset)
+    return train_dataset, valid_dataset, test_dataset
 
 
 def prepare_hldnn_data(
