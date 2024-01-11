@@ -45,6 +45,7 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
     tagger_type = config.tagger_type
 
     # Nice container for our data.
+    logger.info("Loaded data, placing in containers")
     train_data_container = data_loading.DataContainer(
         data=train_data,
         labels=train_labels,
@@ -58,7 +59,9 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
 
     if tagger_type == "efn":
         # Build and compile EFN model
+        logger.info(f"Building {tagger_type} model")
         model = models.efn_model_generator()
+        logger.info("Preparing Data For Model")
         train_dataset, test_dataset, valid_dataset = data_loading.prepare_efn_data(
             config,
             train_data_container,
@@ -66,9 +69,11 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
         )
     else:
         # Build model for other tagger types
+        logger.info(f"Building {tagger_type} model")
         model = models.hldnn_model_generator(train_data)
 
         # Prepare tensorflow datasets
+        logger.info("Preparing Data For Model")
         train_dataset, valid_dataset, test_dataset = data_loading.prepare_hldnn_data(
             config,
             train_data_container,
@@ -86,15 +91,22 @@ def main(config: config_loader.Config) -> None:
     """
     data_path = Path("/Users/lucascurtin/Desktop/CERN_DATA")
     test_path = data_path / "test.h5"
+    logger.add("log_files/info.log", level="INFO", mode="w")
+    logger.info("Loading Data")
 
     test = h5py.File(test_path, "r")
     train = h5py.File(test_path, "r")
 
+    logger.info("Build models and formatting data")
+
     (model, train_dataset, valid_dataset, test_dataset) = prepare_data(config, train, test)
 
-    logger.info("Wahey!")
+    logger.info("Built Model and Data Formatted")
 
 
 if __name__ == "__main__":
     config = config_loader._arg_config()
+    logger.info("Loaded config with the following parameters:")
+    for param_name, param_value in vars(config).items():
+        logger.info(f"{param_name}: {param_value}")
     main(config)
