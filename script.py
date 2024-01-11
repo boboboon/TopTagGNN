@@ -44,16 +44,25 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
     # Determine the tagger type
     tagger_type = config.tagger_type
 
+    # Nice container for our data.
+    train_data_container = data_loading.DataContainer(
+        data=train_data,
+        labels=train_labels,
+        weights=train_weights,
+    )
+    test_data_container = data_loading.DataContainer(
+        data=test_data,
+        labels=test_labels,
+        weights=test_weights,
+    )
+
     if tagger_type == "efn":
         # Build and compile EFN model
         model = models.efn_model_generator()
         train_dataset, test_dataset, valid_dataset = data_loading.prepare_efn_data(
-            train_data,
-            test_data,
-            train_labels,
-            test_labels,
-            train_weights,
-            test_weights,
+            config,
+            train_data_container,
+            test_data_container,
         )
     else:
         # Build model for other tagger types
@@ -61,12 +70,9 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
 
         # Prepare tensorflow datasets
         train_dataset, valid_dataset, test_dataset = data_loading.prepare_hldnn_data(
-            train_data,
-            test_data,
-            train_labels,
-            test_labels,
-            train_weights,
-            test_weights,
+            config,
+            train_data_container,
+            test_data_container,
         )
 
     return model, train_dataset, valid_dataset, test_dataset
