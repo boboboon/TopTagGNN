@@ -1,4 +1,4 @@
-n_train_jets: 100
+n_train_jets: 2
 n_test_jets: -1
 valid_fraction: 0.2
 max_constits: 80

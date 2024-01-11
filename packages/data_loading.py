@@ -59,6 +59,7 @@ def load_tagger_config(config: cl.Config) -> dict:
             "data_vector_names": "hl",
             "pre_processing_function": high_level,
             "model_loading_function": models.hldnn_model_generator,
+            "data_loading_function": prepare_hldnn_data,
         },
         "efn": {
             "data_vector_names": "constit",
@@ -67,6 +68,7 @@ def load_tagger_config(config: cl.Config) -> dict:
                 config.max_constits,
             ),
             "model_loading_function": models.efn_model_generator,
+            "data_loading_function": prepare_efn_data,
         },
     }
 

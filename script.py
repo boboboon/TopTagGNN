@@ -57,28 +57,15 @@ def prepare_data(config: config_loader.Config, train: h5py.File, test: h5py.File
         weights=test_weights,
     )
 
-    if tagger_type == "efn":
-        # Build and compile EFN model
-        logger.info(f"Building {tagger_type} model")
-        model = models.efn_model_generator()
-        logger.info("Preparing Data For Model")
-        train_dataset, test_dataset, valid_dataset = data_loading.prepare_efn_data(
-            config,
-            train_data_container,
-            test_data_container,
-        )
-    else:
-        # Build model for other tagger types
-        logger.info(f"Building {tagger_type} model")
-        model = models.hldnn_model_generator(train_data)
+    logger.info(f"Building {tagger_type} model")
+    model = tagger_type["model_loading_function"]()
 
-        # Prepare tensorflow datasets
-        logger.info("Preparing Data For Model")
-        train_dataset, valid_dataset, test_dataset = data_loading.prepare_hldnn_data(
-            config,
-            train_data_container,
-            test_data_container,
-        )
+    logger.info("Preparing Data For Model")
+    train_dataset, test_dataset, valid_dataset = tagger_type["data_loading_function"](
+        config,
+        train_data_container,
+        test_data_container,
+    )
 
     return model, train_dataset, valid_dataset, test_dataset
 
