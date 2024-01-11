@@ -16,7 +16,7 @@ def main(config: config_loader.Config) -> None:
     test_path = data_path / "test.h5"
     logger.add("log_files/info.log", level="INFO", mode="w")
 
-    logger.info("Build models and formatting data")
+    logger.info("Building models and formatting data")
 
     (model, train_dataset, valid_dataset, test_dataset) = data_loading.prepare_data(
         config=config,
@@ -35,7 +35,7 @@ def main(config: config_loader.Config) -> None:
         epochs=config.num_epochs,
         verbose=1,
     )
-    plotter.train_history_plot(train_history, config.figure_dir)
+    plotter.train_history_plot(train_history, Path(config.figure_path))
 
 
 if __name__ == "__main__":
