@@ -1,6 +1,7 @@
 """What's the deal with tagging?"""
 from pathlib import Path
 
+import tensorflow as tf
 from loguru import logger
 
 from packages import config_loader, data_loading, plotter
@@ -16,15 +17,15 @@ def main(config: config_loader.Config) -> None:
     test_path = data_path / "test.h5"
     logger.add("log_files/info.log", level="INFO", mode="w")
 
-    logger.info("Loading Data")
-
     logger.info("Build models and formatting data")
+
     (model, train_dataset, valid_dataset, test_dataset) = data_loading.prepare_data(
         config=config,
         train_path=test_path,
         test_path=test_path,
     )
     logger.info("Training Model")
+
     batch_size = config.batch_size
 
     train_history = model.fit(

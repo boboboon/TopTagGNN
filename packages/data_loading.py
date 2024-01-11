@@ -8,6 +8,7 @@ import numpy as np
 import sklearn as skl
 import tensorflow as tf
 from loguru import logger
+from sklearn.model_selection import train_test_split
 
 from packages import config_loader as cl
 from packages import models
@@ -57,11 +58,6 @@ def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tu
     test = h5py.File(test_path, "r")
     train = h5py.File(train_path, "r")
     logger.info("Separating train and test data into constituent parts")
-    # Extract labels and weights
-    train_labels = train["labels"][: config.n_train_jets]
-    train_weights = train["weights"][: config.n_train_jets]
-    test_labels = test["labels"][: config.n_test_jets]
-    test_weights = test["weights"][: config.n_test_jets]
 
     # Load tagger configuration
     tagger_config = load_tagger_config(config)
@@ -80,6 +76,12 @@ def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tu
     logger.info("Preprocessing data")
     train_data = tagger_config["pre_processing_function"](train_dict)
     test_data = tagger_config["pre_processing_function"](test_dict)
+
+    # Extract labels and weights
+    train_labels = train["labels"][: config.n_train_jets]
+    train_weights = train["weights"][: config.n_train_jets]
+    test_labels = test["labels"][: config.n_test_jets]
+    test_weights = test["weights"][: config.n_test_jets]
 
     # Nice containers for our data.
     logger.info("Putting data in containers")
@@ -331,7 +333,6 @@ def prepare_efn_data(
     test_pt = test_data[:, :, pt_index]
 
     # Split the training data into train and validation sets
-    from sklearn.model_selection import train_test_split
 
     (
         train_angular,
@@ -351,20 +352,26 @@ def prepare_efn_data(
     )
 
     batch_size = config.batch_size
-    # Create TensorFlow datasets
-    train_datasets = [train_pt, train_angular, train_labels, train_weights]
-    valid_datasets = [valid_pt, valid_angular, valid_labels, valid_weights]
-    test_datasets = [test_pt, test_angular, test_labels, test_weights]
 
-    train_dataset = tf.data.Dataset.zip(
-        tuple(create_tf_dataset(data_list, batch_size) for data_list in train_datasets),
+    # Build tensorflow data sets
+    train_list = [train_pt, train_angular, train_labels, train_weights]
+    train_sets = tuple(
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in train_list]
     )
-    valid_dataset = tf.data.Dataset.zip(
-        tuple(create_tf_dataset(data_list, batch_size) for data_list in valid_datasets),
+    train_data = tf.data.Dataset.zip(train_sets[:2])
+    train_dataset = tf.data.Dataset.zip((train_data,) + train_sets[2:])
+
+    valid_list = [valid_pt, valid_angular, valid_labels, valid_weights]
+    valid_sets = tuple(
+        [tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in valid_list]
     )
-    test_dataset = tf.data.Dataset.zip(
-        tuple(create_tf_dataset(data_list, batch_size) for data_list in test_datasets),
-    )
+    valid_data = tf.data.Dataset.zip(valid_sets[:2])
+    valid_dataset = tf.data.Dataset.zip((valid_data,) + valid_sets[2:])
+
+    test_list = [test_pt, test_angular, test_labels, test_weights]
+    test_sets = tuple([tf.data.Dataset.from_tensor_slices(i).batch(batch_size) for i in test_list])
+    test_data = tf.data.Dataset.zip(test_sets[:2])
+    test_dataset = tf.data.Dataset.zip((test_data,) + test_sets[2:])
 
     return train_dataset, valid_dataset, test_dataset
 
