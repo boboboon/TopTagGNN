@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from packages import config_loader, data_loading
+from packages import config_loader, data_loading, plotter
 
 
 def main(config: config_loader.Config) -> None:
@@ -24,7 +24,17 @@ def main(config: config_loader.Config) -> None:
         train_path=test_path,
         test_path=test_path,
     )
-    logger.info("Successfully built model and formatted data")
+    logger.info("Training Model")
+    batch_size = config.batch_size
+
+    train_history = model.fit(
+        train_dataset,
+        validation_data=valid_dataset,
+        batch_size=batch_size,
+        epochs=config.num_epochs,
+        verbose=1,
+    )
+    plotter.train_history_plot(train_history, config.figure_dir)
 
 
 if __name__ == "__main__":

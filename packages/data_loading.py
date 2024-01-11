@@ -274,7 +274,7 @@ def high_level(data_dict: dict) -> np.ndarray:
     return np.stack(features, axis=-1)
 
 
-def create_tf_dataset(data_list: list, batch_size: int) -> tf.data.Dataset.BatchDataset:
+def create_tf_dataset(data_list: list, batch_size: int) -> tf.data.Dataset:
     """Create a TensorFlow dataset from a list of data and batch it.
 
     This function takes a list of data and creates a TensorFlow dataset using
