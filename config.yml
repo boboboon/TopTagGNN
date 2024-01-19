@@ -1,9 +1,9 @@
-n_train_jets: 2
+n_train_jets: 10
 n_test_jets: -1
 valid_fraction: 0.2
 max_constits: 5
 tagger_type: efn
-num_epochs: 2
+num_epochs: 10
 batch_size: 64
 data_path: /Users/lucascurtin/Desktop/CERN_DATA"
 figure_path: /Users/lucascurtin/Desktop/TopTagGNN/figures
