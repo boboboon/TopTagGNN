@@ -53,7 +53,8 @@ def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tu
         test_path (Path): Path to our testing data file (HDF5 format).
 
     Returns:
-        tuple: A tuple containing the model and datasets for training, validation, and testing.
+        tuple: A tuple containing the model, test jet pT data, train data container,
+        and test data container.
     """
     test = h5py.File(test_path, "r")
     train = h5py.File(train_path, "r")
@@ -99,14 +100,7 @@ def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tu
     logger.info(f"Building {config.tagger_type} model")
     model = tagger_config["model_loading_function"]()
 
-    logger.info("Preparing data For model")
-    train_dataset, test_dataset, valid_dataset = tagger_config["data_loading_function"](
-        config,
-        train_data_container,
-        test_data_container,
-    )
-
-    return model, train_dataset, valid_dataset, test_dataset
+    return model, test["fjet_pt"][: config.n_train_jets], train_data_container, test_data_container
 
 
 def load_tagger_config(config: cl.Config) -> dict:

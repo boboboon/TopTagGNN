@@ -2,8 +2,9 @@
 from pathlib import Path
 
 from loguru import logger
+from numpy import linspace
 
-from packages import config_loader, data_loading, plotter
+from packages import config_loader, data_loading, models, plotter
 
 
 def main(config: config_loader.Config) -> None:
@@ -18,10 +19,17 @@ def main(config: config_loader.Config) -> None:
 
     logger.info("Building models and formatting data")
 
-    (model, train_dataset, valid_dataset, test_dataset) = data_loading.prepare_data(
+    model, jet_pt, train_data_container, test_data_container = data_loading.prepare_data(
         config=config,
         train_path=test_path,
         test_path=test_path,
+    )
+    logger.info("Preparing data For model")
+    data_loading_function = data_loading.tagger_config["data_loading_function"]
+    train_dataset, test_dataset, valid_dataset = data_loading_function(
+        config,
+        train_data_container,
+        test_data_container,
     )
 
     logger.info("Training Model")
@@ -36,6 +44,34 @@ def main(config: config_loader.Config) -> None:
         verbose=1,
     )
     plotter.train_history_plot(train_history, Path(config.figure_path))
+    models.evaluate_model(model, test_dataset, config.batch_size)
+
+    # Evaluate our model
+    signal_efficiencies = [0.3, 0.5, 0.8]
+    model_eval_dict = models.evaluate_model(
+        model,
+        test_dataset,
+        config.batch_size,
+        signal_efficiencies,
+    )
+    # Finally make a plot of the background rejection versus jet pT. Start by making
+    # a set of pT bins and empty vectors to accept B.R. values. Note pt bin array
+    # defines bin edges
+
+    pt_bins = linspace(350000, 3150000, 15)
+
+    br_array_dict = models.calculate_background_rejection_vs_pt(
+        jet_pt,
+        model_eval_dict["predictions"],
+        test_data_container.labels,
+        signal_efficiencies,
+        pt_bins,
+    )
+    plotter.plot_background_rejection_vs_pt(
+        br_array_dict,
+        pt_bins,
+        config.figure_dir,
+    )
 
 
 if __name__ == "__main__":
