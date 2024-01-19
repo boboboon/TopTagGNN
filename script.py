@@ -25,7 +25,7 @@ def main(config: config_loader.Config) -> None:
         test_path=test_path,
     )
     logger.info("Preparing data For model")
-    tagger_config = data_loading.load_tagger_config(config.tagger_type)
+    tagger_config = data_loading.load_tagger_config(config)
     data_loading_function = tagger_config["data_loading_function"]
     train_dataset, test_dataset, valid_dataset = data_loading_function(
         config,
