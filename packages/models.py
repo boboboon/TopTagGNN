@@ -6,8 +6,9 @@ import logging
 import numpy as np
 import tensorflow as tf
 from energyflow.archs import EFN
-from models import DataContainer
 from sklearn import metrics
+
+from packages.data_loading import DataContainer
 
 
 def efn_model_generator() -> EFN:

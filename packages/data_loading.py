@@ -10,41 +10,11 @@ import tensorflow as tf
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
-from packages import config_loader as cl
-from packages import models
+from packages import config_loader, models
+from packages.container import DataContainer
 
 
-class DataContainer:
-    """A custom data container class to hold data, labels, and weights for training and testing.
-
-    Args:
-        data (np.array): The input data array with shape (num_samples, max_constits, num_features).
-        labels (np.array): The labels array with shape (num_samples, num_classes).
-        weights (np.array): The weights array with shape (num_samples,).
-
-    Attributes:
-        data (np.array): The input data array.
-        labels (np.array): The labels array.
-        weights (np.array): The weights array.
-
-    Example:
-        data_container = DataContainer(train_data, train_labels, train_weights)
-    """
-
-    def __init__(self, data: np.array, labels: np.array, weights: np.array) -> None:
-        """Initializes a data container for training and testing data.
-
-        Args:
-            data (np.array): The input data with shape (num_samples, max_constits, num_features).
-            labels (np.array): The labels with shape (num_samples, num_classes).
-            weights (np.array): The sample weights with shape (num_samples,).
-        """
-        self.data = data
-        self.labels = labels
-        self.weights = weights
-
-
-def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tuple:
+def prepare_data(config: config_loader.Config, train_path: Path(), test_path: Path()) -> tuple:
     """Prepares data and model based on the provided configuration.
 
     Args:
@@ -103,7 +73,7 @@ def prepare_data(config: cl.Config, train_path: Path(), test_path: Path()) -> tu
     return model, test["fjet_pt"][: config.n_train_jets], train_data_container, test_data_container
 
 
-def load_tagger_config(config: cl.Config) -> dict:
+def load_tagger_config(config: config_loader.Config) -> dict:
     """Loads tagger information.
 
     Args:
@@ -294,7 +264,7 @@ def create_tf_dataset(data_list: list, batch_size: int) -> tf.data.Dataset:
 
 
 def prepare_efn_data(
-    config: cl.Config,
+    config: config_loader.Config,
     train_data_container: DataContainer,
     test_data_container: DataContainer,
 ) -> tuple:
@@ -371,7 +341,7 @@ def prepare_efn_data(
 
 
 def prepare_hldnn_data(
-    config: cl.Config,
+    config: config_loader.Config,
     train_data_container: DataContainer,
     test_data_container: DataContainer,
 ) -> tuple:
