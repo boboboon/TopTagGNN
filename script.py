@@ -45,7 +45,6 @@ def main(config: config_loader.Config) -> None:
         verbose=1,
     )
     plotter.train_history_plot(train_history, Path(config.figure_path))
-    models.evaluate_model(model, test_dataset, config.batch_size)
 
     # Evaluate our model
     signal_efficiencies = [0.3, 0.5, 0.8]
