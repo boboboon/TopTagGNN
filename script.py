@@ -53,6 +53,7 @@ def main(config: config_loader.Config) -> None:
         test_dataset,
         config.batch_size,
         signal_efficiencies,
+        test_data_container.labels,
     )
     # Finally make a plot of the background rejection versus jet pT. Start by making
     # a set of pT bins and empty vectors to accept B.R. values. Note pt bin array

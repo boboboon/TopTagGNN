@@ -8,8 +8,6 @@ import tensorflow as tf
 from energyflow.archs import EFN
 from sklearn import metrics
 
-from packages.container import DataContainer
-
 
 def efn_model_generator() -> EFN:
     """Creates our efn model.
@@ -67,9 +65,10 @@ def hldnn_model_generator(train_data: np.array) -> tf.keras.Sequential():
 
 def evaluate_model(
     model: EFN | tf.keras.Sequential(),
-    test_dataset: DataContainer,
+    test_dataset: tf.data.Dataset.ZipDataset,
     batch_size: int,
     signal_efficiencies: list,
+    labels: np.array,
 ) -> dict:
     """Evaluate classification metrics for a given model on a test dataset.
 
@@ -78,6 +77,7 @@ def evaluate_model(
         test_dataset (DataContainer): The test dataset.
         batch_size (int): Batch size for predictions.
         signal_efficiencies (list): List of different thresholds for calculating metrics.
+        labels (np.array): Our test dataset's labels
 
     Returns:
         (dict): Dictionary of different metrics including predictions.
@@ -91,11 +91,11 @@ def evaluate_model(
     discrete_predictions = (predictions > default_threshold).astype(int)
 
     # Evaluate metrics
-    auc = metrics.roc_auc_score(test_dataset.labels, predictions)
-    acc = metrics.accuracy_score(test_dataset.labels, discrete_predictions)
+    auc = metrics.roc_auc_score(labels, predictions)
+    acc = metrics.accuracy_score(labels, discrete_predictions)
 
     # Evaluate background rejection at fixed signal efficiency working points
-    fpr, tpr, thresholds = metrics.roc_curve(test_dataset.labels, predictions)
+    fpr, tpr, thresholds = metrics.roc_curve(labels, predictions)
 
     # Define the signal efficiency levels to check
     background_rejections = []
